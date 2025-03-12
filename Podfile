@@ -8,5 +8,6 @@ target 'YugiOh-PlayingCards' do
   # Pods for YugiOh-PlayingCards
   pod 'Alamofire', '5.10.2'
   pod 'Kingfisher', '7.6.2'
+  pod 'SnapKit', '5.7.1'
 
 end

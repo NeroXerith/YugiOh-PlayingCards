@@ -1,3 +1,4 @@
 ${PODS_ROOT}/Target Support Files/Pods-YugiOh-PlayingCards/Pods-YugiOh-PlayingCards-frameworks.sh
 ${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework
 ${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework
+${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework
