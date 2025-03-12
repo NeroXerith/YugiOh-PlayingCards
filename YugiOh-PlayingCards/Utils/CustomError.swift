@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum CustomError: Error {
+enum CustomError {
     case noConnection, noData
 }
 
@@ -15,9 +15,9 @@ extension CustomError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .noConnection:
-            return "No internet connection"
+            return NSLocalizedString("No connection found", comment: "")
         case .noData:
-            return "No data available"
+            return NSLocalizedString("No data found", comment: "")
         }
     }
 }

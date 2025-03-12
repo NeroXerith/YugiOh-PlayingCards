@@ -34,21 +34,27 @@ final class YgorprodeckService {
         
         var url: String {
             switch self {
-            case .cardList: return "\(ApiURL.main.baseURL)\(path)"
+            case .cardList: return "\(ApiURL.db.baseURL)\(path)"
             default: return ":"
             }
         }
     }
     
     func fetchAllCards(completion: @escaping (Result<[Card], Error>) -> Void){
-        AF.request(Endpoint.cardList.url)
+        let urlString = Endpoint.cardList.url
+        debugPrint("🌐 Fetching from : \(urlString)")
+        AF.request(urlString)
             .validate(statusCode: 200..<300)
-            .validate(contentType: ["Application/json"])
-            .responseDecodable(of: [Card].self) { response in
+            .validate(contentType: ["application/json"])
+            .responseDecodable(of: CardResponse.self) { response in
                 switch response.result {
                 case .success(let cards):
-                    completion(.success(cards))
-                case .failure(let error):
+                    debugPrint("✅ Successfully fetched \(cards.data.count) cards")
+                    if let firstCard = cards.data.first {
+                        debugPrint("1️⃣ First Card: \(firstCard)")
+                    }
+                    completion(.success(cards.data))
+                case .failure:
                     completion(.failure(CustomError.noConnection))
                 }
             }
