@@ -106,7 +106,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! CardListCell // Fix: Corrected dequeue method
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! CardListCell
         cell.configure(info: viewModel.getInfo(for: indexPath))
         return cell
     }
