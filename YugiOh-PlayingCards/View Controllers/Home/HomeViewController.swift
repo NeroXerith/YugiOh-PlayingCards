@@ -8,13 +8,13 @@
 import Foundation
 import UIKit
 import SnapKit
+import Combine
 
 class HomeViewController: UIViewController {
     
     private lazy var filterSegment: UISegmentedControl = {
         let segmented = UISegmentedControl(items: Types.allCases.map { $0.name })
         segmented.selectedSegmentIndex = 0
-        segmented.addTarget(self, action: #selector(didSelectItem(_:)), for: .valueChanged)
         return segmented
     }()
 
@@ -35,11 +35,11 @@ class HomeViewController: UIViewController {
        }()
 
     private let viewModel: HomeViewModel
-
+    @Published var cancellables = Set<AnyCancellable>()
+    
     required init(viewModel: HomeViewModel) {
         self.viewModel = viewModel
-        super.init(nibName: nil, bundle: nil) // Fix: Corrected super.init() call
-        self.viewModel.delegate = self
+        super.init(nibName: nil, bundle: nil)
         navigationItem.largeTitleDisplayMode = .always
     }
 
@@ -52,11 +52,12 @@ class HomeViewController: UIViewController {
 
         setupNavigation()
         configureLayout()
+        setupBindings()
+        viewModel.loadData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        viewModel.loadData()
     }
 }
 
@@ -67,7 +68,7 @@ private extension HomeViewController {
     }
     func configureLayout() {
         view.addSubview(tableView)
-        view.addSubview(loadingIndicator) // Make sure to add the loading indicator!
+        view.addSubview(loadingIndicator)
 
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -94,8 +95,53 @@ private extension HomeViewController {
 
 // MARK: Actions
 private extension HomeViewController {
-    @objc func didSelectItem(_ selector: UISegmentedControl) {
-        self.viewModel.filterByType(type: Types(rawValue: selector.selectedSegmentIndex) ?? .all)
+    func handleViewState(_ state: ViewState) {
+        switch state {
+        case .idle:
+            break
+        case .loading:
+            self.startLoading()
+        case .success:
+            self.tableView.setContentOffset(.zero, animated: true)
+            self.tableView.reloadData()
+            self.stopLoading()
+        case .error(let error):
+            self.stopLoading()
+            let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .cancel))
+            alert.addAction(UIAlertAction(title: "Try Again", style: .default, handler: { [weak self] _ in
+                self?.viewModel.loadData()
+            }))
+            self.present(alert, animated: true)
+
+        }
+    }
+    
+    func setupBindings() {
+        
+        // Bind filter selection to viewModel.selectedType
+        filterSegment.publisher(for: \.selectedSegmentIndex)
+            .map { Types.allCases[$0] }
+            .sink { [weak self] selectedType in
+                self?.viewModel.updateSelectedType(selectedType)
+            }
+            .store(in: &cancellables)
+        
+        // Bind filtered cards to tableview reload
+        viewModel.$filteredCards
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+        
+        // Bind view state changes
+        viewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in self?.handleViewState(state)
+            }
+            .store(in: &cancellables)
+
     }
 }
 
@@ -109,36 +155,5 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! CardListCell
         cell.configure(info: viewModel.getInfo(for: indexPath))
         return cell
-    }
-}
-
-// MARK: RequestDelegate
-extension HomeViewController: RequestDelegate {
-
-    
-    
-    func didUpdate(with state: ViewState) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            switch state {
-            case .idle:
-                break
-            case .loading:
-                self.startLoading()
-            case .success:
-                self.tableView.setContentOffset(.zero, animated: true)
-                self.tableView.reloadData()
-                self.stopLoading()
-            case .error(let error):
-                self.stopLoading()
-                let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .cancel))
-                alert.addAction(UIAlertAction(title: "Try Again", style: .default, handler: { [weak self] _ in
-                    self?.viewModel.loadData()
-                }))
-                self.present(alert, animated: true)
-
-            }
-        }
     }
 }
