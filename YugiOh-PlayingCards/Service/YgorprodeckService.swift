@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import Combine
 
 final class YgorprodeckService {
     
@@ -40,24 +41,19 @@ final class YgorprodeckService {
         }
     }
     
-    func fetchAllCards(completion: @escaping (Result<[Card], Error>) -> Void){
+    func fetchAllCards() -> AnyPublisher<[Card], Error> {
         let urlString = Endpoint.cardList.url
         debugPrint("🌐 Fetching from : \(urlString)")
-        AF.request(urlString)
+        return AF.request(urlString)
             .validate(statusCode: 200..<300)
             .validate(contentType: ["application/json"])
-            .responseDecodable(of: CardResponse.self) { response in
-                switch response.result {
-                case .success(let cards):
+            .publishDecodable(type: CardResponse.self)
+            .tryMap { response in
+                guard let cards = response.value else { throw CustomError.noConnection }
                     debugPrint("✅ Successfully fetched \(cards.data.count) cards")
-                    if let firstCard = cards.data.first {
-                        debugPrint("1️⃣ First Card: \(firstCard)")
-                    }
-                    completion(.success(cards.data))
-                case .failure:
-                    completion(.failure(CustomError.noConnection))
+                return cards.data
                 }
-            }
+            .eraseToAnyPublisher()
     }
 }
 
