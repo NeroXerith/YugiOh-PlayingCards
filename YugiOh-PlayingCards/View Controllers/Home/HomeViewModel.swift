@@ -42,7 +42,7 @@ final class HomeViewModel {
     
     @Published private(set) var filteredCards: [Card] = []
     @Published private(set) var selectedType: Types = .all
-    @Published private(set) var state: ViewState = .idle
+    @Published var state: ViewState = .idle
     @Published private(set) var items: [Card] = []
     
     init(){
@@ -90,6 +90,13 @@ extension HomeViewModel {
             .sink { [weak self] _ in self?.filterData() }
             .store(in: &cancellables)
     }
+    
+    // Setter
+    func updateSelectedType(_ type: Types) {
+        selectedType = type
+    }
+    
+
 }
 
 private extension HomeViewModel {
