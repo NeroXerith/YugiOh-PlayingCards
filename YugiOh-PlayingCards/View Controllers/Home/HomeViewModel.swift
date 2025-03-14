@@ -94,6 +94,7 @@ extension HomeViewModel {
     // Setter
     func updateSelectedType(_ type: Types) {
         selectedType = type
+        filterData()
     }
     
 
@@ -101,10 +102,12 @@ extension HomeViewModel {
 
 private extension HomeViewModel {
     func filterData() {
+        print("Filtering for type: \(selectedType.rawValue)")
         if selectedType == .all {
             filteredCards = items
         } else {
-            filteredCards = items.filter { $0.type == selectedType.rawValue }
+            filteredCards = items.filter { $0.type.localizedCaseInsensitiveContains(selectedType.rawValue) }
         }
+        print("Filtered cards count: \(filteredCards.count)")
     }
 }
