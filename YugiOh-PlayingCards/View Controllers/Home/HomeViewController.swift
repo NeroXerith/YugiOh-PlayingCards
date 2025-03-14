@@ -117,32 +117,36 @@ private extension HomeViewController {
         }
     }
     
+    // MARK: - Segmented Control Change Handler
+    @objc private func segmentChanged(_ sender: UISegmentedControl) {
+        let selectedType = Types.allCases[sender.selectedSegmentIndex]
+        print("Segment changed to: \(selectedType.rawValue)") // Debugging log
+        viewModel.updateSelectedType(selectedType)
+    }
+
+
+    
     func setupBindings() {
-        
-        // Bind filter selection to viewModel.selectedType
-        filterSegment.publisher(for: \.selectedSegmentIndex)
-            .map { Types.allCases[$0] }
-            .sink { [weak self] selectedType in
-                self?.viewModel.updateSelectedType(selectedType)
-            }
-            .store(in: &cancellables)
-        
-        // Bind filtered cards to tableview reload
+        // Bind segmented control changes explicitly
+        filterSegment.addTarget(self, action: #selector(segmentChanged(_:)), for: .valueChanged)
+
+        // Observe filteredCards and reload table view
         viewModel.$filteredCards
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] cards in
+                print("Filtered cards count: \(cards.count)") // Debug log
                 self?.tableView.reloadData()
             }
             .store(in: &cancellables)
-        
-        // Bind view state changes
+
+        // Observe view state changes
         viewModel.$state
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in self?.handleViewState(state)
-            }
+            .sink { [weak self] state in self?.handleViewState(state) }
             .store(in: &cancellables)
-
     }
+
+
 }
 
 // MARK: UITableViewDataSource & UITableViewDelegate
